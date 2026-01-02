@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Obsidian Web Agent",
+  "version": "2.0.0",
+  "description": "Your intelligent Obsidian assistant for the web - capture content from any website into your vault",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.goodreads.com/*",
+    "https://*/*",
+    "http://*/*",
+    "http://127.0.0.1:*/*",
+    "http://localhost:*/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.goodreads.com/book/show/*"],
+      "js": ["flows/goodreads/content.js"]
+    }
+  ],
+  "options_page": "options.html"
+}

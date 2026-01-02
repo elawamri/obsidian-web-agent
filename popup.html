@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obsidian Web Agent</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔮 Obsidian Web Agent</h1>
+      <p class="subtitle" id="flowIndicator">Detecting content...</p>
+    </header>
+
+    <!-- Flow Selection (shown when multiple flows available) -->
+    <div id="flowSelection" class="flow-selection hidden">
+      <h3>Choose an action:</h3>
+      <div id="flowOptions" class="flow-options"></div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Extracting content...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="error" class="error hidden">
+      <p class="error-message"></p>
+      <button id="retryBtn" class="btn btn-secondary">Retry</button>
+    </div>
+
+    <!-- Main Form (dynamic based on flow) -->
+    <form id="contentForm" class="hidden">
+      <div id="formFields">
+        <!-- Dynamic form fields will be inserted here -->
+      </div>
+
+      <div class="button-group">
+        <button type="submit" class="btn btn-primary">
+          <span>📝 Create Note</span>
+        </button>
+        <button type="button" id="settingsBtn" class="btn btn-secondary">
+          ⚙️ Settings
+        </button>
+      </div>
+    </form>
+
+    <!-- Success State -->
+    <div id="success" class="success hidden">
+      <div class="success-icon">✅</div>
+      <h2>Note Created!</h2>
+      <p class="success-message"></p>
+      <div class="help-note">
+        <strong>Note:</strong> If the note didn't open automatically, check:
+        <ul>
+          <li>Obsidian is running</li>
+          <li>Vault name in Settings matches exactly (case-sensitive)</li>
+          <li>The folder path exists in your vault</li>
+        </ul>
+      </div>
+      <button id="openNote" class="btn btn-primary">Try Opening Again</button>
+    </div>
+  </div>
+
+  <script src="core.js"></script>
+  <script src="flows.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

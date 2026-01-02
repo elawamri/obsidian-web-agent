@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obsidian Web Agent - Settings</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      color: #7c3aed;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .section:last-child {
+      border-bottom: none;
+    }
+
+    h2 {
+      color: #333;
+      font-size: 18px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-icon {
+      font-size: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #555;
+      font-size: 14px;
+    }
+
+    .help-text {
+      font-size: 12px;
+      color: #888;
+      margin-top: 5px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 200px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #7c3aed;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #6d28d9;
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+      margin-left: 10px;
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    .save-status {
+      display: inline-block;
+      margin-left: 15px;
+      color: #2d8659;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .save-status.show {
+      opacity: 1;
+    }
+
+    .example {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 4px;
+      border-left: 3px solid #7c3aed;
+      margin-top: 15px;
+    }
+
+    .example-title {
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #7c3aed;
+    }
+
+    .example pre {
+      background: #282c34;
+      color: #abb2bf;
+      padding: 12px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+
+    .flows-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .flow-badge {
+      padding: 8px 16px;
+      background: #e0e7ff;
+      color: #3730a3;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .coming-soon {
+      opacity: 0.6;
+      font-style: italic;
+    }
+
+    .sync-section {
+      background: linear-gradient(135deg, #ede9fe 0%, #e0e7ff 100%);
+      border: 2px solid #7c3aed;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .sync-section h3 {
+      color: #7c3aed;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sync-status {
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .sync-status.success {
+      background: #d1fae5;
+      color: #065f46;
+      display: block;
+    }
+
+    .sync-status.error {
+      background: #fee2e2;
+      color: #991b1b;
+      display: block;
+    }
+
+    .sync-status.loading {
+      background: #e0e7ff;
+      color: #3730a3;
+      display: block;
+    }
+
+    .btn-sync {
+      background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+      color: white;
+      padding: 14px 28px;
+      font-size: 15px;
+    }
+
+    .btn-sync:hover {
+      background: linear-gradient(135deg, #6d28d9 0%, #4f46e5 100%);
+    }
+
+    .api-settings {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(124, 58, 237, 0.2);
+    }
+
+    .api-settings summary {
+      cursor: pointer;
+      color: #7c3aed;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .api-settings-content {
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔮 Obsidian Web Agent Settings</h1>
+    <p class="subtitle">Configure your intelligent Obsidian web assistant</p>
+
+    <form id="settingsForm">
+      <!-- Vault Sync Section -->
+      <div class="section sync-section">
+        <h3>🔄 Auto-Sync with Obsidian</h3>
+        <p class="help-text" style="margin-bottom: 15px;">
+          Automatically fetch your vault's tags and folders using the <strong>Local REST API</strong> plugin.
+        </p>
+        
+        <!-- API Key - Required -->
+        <div class="form-group" style="margin-bottom: 15px;">
+          <label for="localRestApiKey" style="color: #7c3aed;">🔑 API Key (Required)</label>
+          <input type="text" id="localRestApiKey" placeholder="Paste your API key from the Local REST API plugin">
+          <p class="help-text">Copy the API Key from Obsidian → Settings → Local REST API → "How to Access"</p>
+        </div>
+        
+        <button type="button" id="syncBtn" class="btn btn-sync">
+          🔄 Sync Folders from Obsidian
+        </button>
+        
+        <div id="syncStatus" class="sync-status"></div>
+        
+        <details class="api-settings">
+          <summary>Advanced API Settings</summary>
+          <div class="api-settings-content">
+            <div class="form-group">
+              <label for="localRestApiUrl">Local REST API URL</label>
+              <input type="text" id="localRestApiUrl" placeholder="http://127.0.0.1:27123">
+              <p class="help-text">Default: http://127.0.0.1:27123 (HTTP) or https://127.0.0.1:27124 (HTTPS)</p>
+            </div>
+          </div>
+        </details>
+        
+        <div class="example" style="margin-top: 15px;">
+          <div class="example-title">📦 Setup Instructions:</div>
+          <ol style="margin-left: 20px; font-size: 13px; line-height: 1.8;">
+            <li>In Obsidian, go to <strong>Settings → Community Plugins</strong></li>
+            <li>Search for and install <strong>"Local REST API"</strong></li>
+            <li>Enable the plugin</li>
+            <li>In plugin settings, <strong>enable "Non-encrypted (HTTP) Server"</strong></li>
+            <li>Copy the <strong>API Key</strong> from the plugin settings and paste it above</li>
+            <li>Make sure Obsidian is running, then click "Sync"</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Vault Settings -->
+      <div class="section">
+        <h2><span class="section-icon">📁</span> Obsidian Vault Settings</h2>
+        
+        <div class="form-group">
+          <label for="vaultPath">Vault Name *</label>
+          <input type="text" id="vaultPath" required placeholder="e.g., MyVault">
+          <p class="help-text">The name of your Obsidian vault (as shown in Obsidian)</p>
+        </div>
+
+        <div class="form-group">
+          <label for="defaultLocation">Default Note Location *</label>
+          <input type="text" id="defaultLocation" required placeholder="e.g., Books or Inbox/Clippings">
+          <p class="help-text">Where new notes should be created by default (relative to vault root)</p>
+        </div>
+
+        <div class="form-group">
+          <label for="defaultSignificance">Default Significance (1-5)</label>
+          <input type="number" id="defaultSignificance" min="1" max="5" value="3">
+        </div>
+      </div>
+
+      <!-- Folder Paths -->
+      <div class="section">
+        <h2><span class="section-icon">📂</span> Vault Folders</h2>
+        <p class="help-text">Add common folder paths where you store notes. These will appear as autocomplete suggestions.</p>
+        
+        <div class="form-group">
+          <label for="vaultFolders">Common Folder Paths (one per line)</label>
+          <textarea id="vaultFolders" rows="8" placeholder="Books&#10;Articles&#10;Notes/Projects&#10;Archive&#10;..."></textarea>
+          <p class="help-text">Example: Books, Articles, Notes/Projects</p>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div class="section">
+        <h2><span class="section-icon">🏷️</span> Vault Tags</h2>
+        <p class="help-text">Paste all your existing Obsidian tags here. The extension will only suggest these tags (no new tags created).</p>
+        
+        <div class="form-group">
+          <label for="vaultTags">Your Vault Tags (one per line or comma-separated)</label>
+          <textarea id="vaultTags" rows="10" placeholder="Computer-Science&#10;Software-Engineering&#10;Philosophy&#10;History&#10;Literature&#10;Media-Type/Book&#10;Media-Type/Article&#10;..."></textarea>
+          <p class="help-text">Example: Computer-Science, Philosophy, History/Middle-East, Media-Type/Book</p>
+        </div>
+
+        <button type="button" id="importTagsBtn" class="btn btn-secondary">📥 Import from Dataview Query</button>
+        <p class="help-text" style="margin-top: 10px;">Or copy this Dataview query into Obsidian to get all your tags:</p>
+        <div class="example">
+          <pre>```dataview
+TABLE WITHOUT ID
+  file.tags as Tags
+FROM ""
+FLATTEN file.tags as tag
+GROUP BY tag```</pre>
+        </div>
+      </div>
+
+      <!-- Genre Mapping (for Goodreads flow) -->
+      <div class="section">
+        <h2><span class="section-icon">📚</span> Genre to Tag Mapping</h2>
+        <p class="help-text">Map web content categories (like Goodreads genres) to your custom Obsidian tags (JSON format)</p>
+        
+        <div class="form-group">
+          <textarea id="genreMapping" placeholder='{"Fiction": "Literature", "Programming": "Computer-Science"}'></textarea>
+        </div>
+
+        <div class="example">
+          <div class="example-title">Example Mapping:</div>
+          <pre>{
+  "Fiction": "Literature",
+  "Science Fiction": "Computer-Science, Science-Fiction",
+  "Philosophy": "Philosophy",
+  "Programming": "Computer-Science, Software-Engineering",
+  "History": "History"
+}</pre>
+        </div>
+      </div>
+
+      <!-- Available Flows -->
+      <div class="section">
+        <h2><span class="section-icon">🔄</span> Available Flows</h2>
+        <p class="help-text">These are the content types currently supported by Obsidian Web Agent:</p>
+        
+        <div class="flows-list">
+          <span class="flow-badge">📚 Goodreads Books</span>
+          <span class="flow-badge">🌐 Generic Web Pages</span>
+          <span class="flow-badge coming-soon">📄 Articles (Coming Soon)</span>
+          <span class="flow-badge coming-soon">🎬 YouTube (Coming Soon)</span>
+          <span class="flow-badge coming-soon">📝 Wikipedia (Coming Soon)</span>
+        </div>
+        <p class="help-text" style="margin-top: 15px;">More flows will be added in future updates!</p>
+      </div>
+
+      <div style="margin-top: 30px;">
+        <button type="submit" class="btn btn-primary">💾 Save Settings</button>
+        <button type="button" id="resetBtn" class="btn btn-secondary">Reset to Defaults</button>
+        <span id="saveStatus" class="save-status">✓ Saved!</span>
+      </div>
+    </form>
+  </div>
+
+  <script src="vault-integration.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
