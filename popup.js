@@ -302,6 +302,11 @@ function initializeTagAutocomplete(suggestedTags, vaultTags) {
   selectedTagsSet = new Set(suggestedTags); // Auto-select suggested tags
   highlightedIndex = -1;
   
+  console.log('=== Tag Autocomplete Initialization ===');
+  console.log('Vault tags:', vaultTags);
+  console.log('Suggested tags:', suggestedTags);
+  console.log('All available tags:', allAvailableTags);
+  
   const input = document.getElementById('tagInput');
   const autocomplete = document.getElementById('tagAutocomplete');
   
@@ -340,7 +345,7 @@ function initializeTagAutocomplete(suggestedTags, vaultTags) {
     autocomplete.classList.remove('hidden');
     highlightedIndex = -1;
     
-    matches.slice(0, 15).forEach((tag, index) => {
+    matches.forEach((tag, index) => {
       const item = document.createElement('div');
       item.className = 'tag-autocomplete-item';
       if (suggestedTagsList.includes(tag)) {
@@ -390,11 +395,11 @@ function initializeTagAutocomplete(suggestedTags, vaultTags) {
   // Focus event - show all available tags when focused and empty
   newInput.addEventListener('focus', (e) => {
     if (e.target.value.trim() === '') {
-      // Show some suggestions when focused
+      // Show all available tags when focused
       const availableTags = allAvailableTags.filter(tag => !selectedTagsSet.has(tag));
       if (availableTags.length > 0) {
         autocomplete.innerHTML = '';
-        availableTags.slice(0, 10).forEach((tag, index) => {
+        availableTags.forEach((tag, index) => {
           const item = document.createElement('div');
           item.className = 'tag-autocomplete-item';
           if (suggestedTagsList.includes(tag)) {
@@ -518,12 +523,17 @@ function initializeLocationAutocomplete(suggestedLocation, vaultFolders) {
   const autocomplete = document.getElementById('locationAutocomplete');
   let locationHighlightedIndex = -1;
   
+  console.log('=== Location Autocomplete Initialization ===');
+  console.log('Vault folders:', vaultFolders);
+  console.log('Suggested location:', suggestedLocation);
+  
   if (!input || !autocomplete) {
     console.error('Location input or autocomplete element not found');
     return;
   }
   
   const allFolders = [...new Set([suggestedLocation, ...vaultFolders])].filter(Boolean);
+  console.log('All folders:', allFolders);
   
   // Remove any existing listeners by cloning the input
   const newInput = input.cloneNode(true);
@@ -550,7 +560,7 @@ function initializeLocationAutocomplete(suggestedLocation, vaultFolders) {
     autocomplete.classList.remove('hidden');
     locationHighlightedIndex = -1;
     
-    matches.slice(0, 15).forEach((folder, index) => {
+    matches.forEach((folder, index) => {
       const item = document.createElement('div');
       item.className = 'tag-autocomplete-item';
       if (folder === suggestedLocation) {
@@ -572,7 +582,7 @@ function initializeLocationAutocomplete(suggestedLocation, vaultFolders) {
   newInput.addEventListener('focus', (e) => {
     if (allFolders.length > 0) {
       autocomplete.innerHTML = '';
-      allFolders.slice(0, 10).forEach((folder, index) => {
+      allFolders.forEach((folder, index) => {
         const item = document.createElement('div');
         item.className = 'tag-autocomplete-item';
         if (folder === suggestedLocation) {

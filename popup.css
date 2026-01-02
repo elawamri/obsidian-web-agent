@@ -201,8 +201,9 @@ textarea {
   border: 1px solid #ddd;
   border-top: none;
   border-radius: 0 0 4px 4px;
-  max-height: 200px;
+  max-height: 250px;
   overflow-y: auto;
+  overflow-x: hidden;
   z-index: 1000;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
