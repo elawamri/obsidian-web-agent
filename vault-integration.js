@@ -114,6 +114,45 @@ const VaultIntegration = {
       console.error('Failed to fetch vault folders:', error);
       return null;
     }
+  },
+  
+  // Fetch all tags from the vault using the tags/ endpoint
+  async fetchVaultTags(onProgress) {
+    try {
+      if (onProgress) {
+        onProgress('Fetching tags from vault...');
+      }
+      
+      const url = `${this.apiUrl}/tags/`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.getHeaders()
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to fetch tags, status:', response.status);
+        return null;
+      }
+      
+      const data = await response.json();
+      
+      // The forked plugin returns tags as an array
+      if (Array.isArray(data)) {
+        return data.sort();
+      }
+      
+      // Fallback if the response format is different
+      if (data.tags && Array.isArray(data.tags)) {
+        return data.tags.sort();
+      }
+      
+      console.error('Unexpected tags response format:', data);
+      return null;
+    } catch (error) {
+      console.error('Failed to fetch vault tags:', error);
+      return null;
+    }
   }
 };
 

@@ -179,11 +179,21 @@ async function syncVaultData() {
       document.getElementById('vaultFolders').value = folders.join('\n');
     }
     
+    // Fetch tags with progress updates
+    const tags = await VaultIntegration.fetchVaultTags((progress) => {
+      syncStatus.textContent = progress;
+    });
+    
+    // Update the tags field
+    if (tags && tags.length > 0) {
+      document.getElementById('vaultTags').value = tags.join('\n');
+    }
+    
     // Show success
     syncStatus.className = 'sync-status success';
     syncStatus.innerHTML = `✅ <strong>Sync successful!</strong><br>
       📂 ${folders ? folders.length : 0} folders found<br>
-      🏷️ Tags: Keep your manually configured tags (no API endpoint available)<br>
+      🏷️ ${tags ? tags.length : 0} tags synced<br>
       <em>Don't forget to click "Save Settings" to keep these changes!</em>`;
     
   } catch (error) {
@@ -192,7 +202,7 @@ async function syncVaultData() {
     syncStatus.innerHTML = `❌ <strong>Sync failed:</strong><br>${error.message.replace(/\n/g, '<br>')}`;
   } finally {
     syncBtn.disabled = false;
-    syncBtn.textContent = '🔄 Sync Folders from Obsidian';
+    syncBtn.textContent = '🔄 Sync from Obsidian';
   }
 }
 

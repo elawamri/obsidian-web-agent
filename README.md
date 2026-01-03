@@ -56,7 +56,31 @@ Works on any website:
 - 🐦 Twitter/X Threads
 - And more based on your requests!
 
-## 🚀 Installation
+## � Prerequisites
+
+### Obsidian Local REST API Plugin (Required)
+
+This extension requires the **forked version** of the Local REST API plugin to function properly. The forked version adds support for syncing tags from your vault.
+
+**Install the forked plugin:**
+
+1. Open Obsidian
+2. Go to **Settings → Community Plugins**
+3. Disable **Safe Mode** if enabled
+4. Since this is a forked plugin, you'll need to install it manually:
+   - Clone or download from: https://github.com/elawamri/obsidian-local-rest-api
+   - Copy the plugin folder to: `YourVault/.obsidian/plugins/`
+   - Restart Obsidian
+   - Enable the plugin in Community Plugins
+5. Configure the plugin:
+   - Enable **"Non-encrypted (HTTP) Server"** (recommended for localhost)
+   - Note your **API Key** (you'll need this in the extension settings)
+   - Default port: `27123`
+
+**Why the fork?**
+The original plugin doesn't provide a `/tags/` endpoint. This fork adds tag retrieval support, allowing the extension to sync both folders and tags from your vault automatically.
+
+## �🚀 Installation
 
 ### 1. Load the Extension in Chrome
 
@@ -73,8 +97,10 @@ Works on any website:
 3. Configure:
    - **Vault Name** - Your vault's name (as shown in Obsidian)
    - **Default Location** - Where to save notes (e.g., "Books" or "Inbox")
-   - **Vault Folders** (for autocomplete)
-   - **Vault Tags** (for smart suggestions)
+   - **Local REST API Settings** - API URL and API Key from Obsidian
+   - Click **"Sync from Obsidian"** to automatically fetch:
+     - **Vault Folders** (for location autocomplete)
+     - **Vault Tags** (for smart tag suggestions)
    - **Genre Mapping** (customize tag mappings)
 
 ## 📖 Usage
