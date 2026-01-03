@@ -344,17 +344,6 @@
           <textarea id="vaultTags" rows="10" placeholder="Computer-Science&#10;Software-Engineering&#10;Philosophy&#10;History&#10;Literature&#10;Media-Type/Book&#10;Media-Type/Article&#10;..."></textarea>
           <p class="help-text">Example: Computer-Science, Philosophy, History/Middle-East, Media-Type/Book</p>
         </div>
-
-        <button type="button" id="importTagsBtn" class="btn btn-secondary">📥 Import from Dataview Query</button>
-        <p class="help-text" style="margin-top: 10px;">Or copy this Dataview query into Obsidian to get all your tags:</p>
-        <div class="example">
-          <pre>```dataview
-TABLE WITHOUT ID
-  file.tags as Tags
-FROM ""
-FLATTEN file.tags as tag
-GROUP BY tag```</pre>
-        </div>
       </div>
 
       <!-- Genre Mapping (for Goodreads flow) -->
