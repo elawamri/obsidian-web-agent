@@ -6,6 +6,7 @@ const defaultSettings = {
   defaultSignificance: 3,
   localRestApiUrl: 'http://127.0.0.1:27123',
   localRestApiKey: '',
+  templatePattern: '.*Note Template\\.md$',
   vaultFolders: [
     'Books',
     'Articles',
@@ -18,6 +19,7 @@ const defaultSettings = {
     'non-fiction',
     'to-read'
   ],
+  vaultTemplates: [],
   genreMapping: {
     'Fiction': 'Literature',
     'Science Fiction': 'Computer-Science, Science-Fiction',
@@ -48,9 +50,18 @@ async function loadSettings() {
   document.getElementById('vaultPath').value = settings.vaultPath;
   document.getElementById('defaultLocation').value = settings.defaultLocation;
   document.getElementById('defaultSignificance').value = settings.defaultSignificance;
+  document.getElementById('templatePattern').value = settings.templatePattern || defaultSettings.templatePattern;
   document.getElementById('vaultFolders').value = (settings.vaultFolders || []).join('\n');
   document.getElementById('vaultTags').value = settings.vaultTags.join('\n');
   document.getElementById('genreMapping').value = JSON.stringify(settings.genreMapping, null, 2);
+  
+  // Display synced templates
+  const templatesList = document.getElementById('templatesList');
+  if (settings.vaultTemplates && settings.vaultTemplates.length > 0) {
+    templatesList.innerHTML = settings.vaultTemplates.map(t => `<div class="template-item">📄 ${t.name}</div>`).join('');
+  } else {
+    templatesList.innerHTML = '<em>No templates synced. Click "Sync from Obsidian" to fetch templates.</em>';
+  }
   
   // Load API settings - auto-correct old HTTPS URL to HTTP
   let apiUrl = settings.localRestApiUrl || defaultSettings.localRestApiUrl;
@@ -88,20 +99,23 @@ async function saveSettings(e) {
       .map(t => t.trim())
       .filter(Boolean);
     
+    // Get current templates from storage (don't overwrite them)
+    const currentSettings = await chrome.storage.sync.get(['vaultTemplates']);
+    
     const settings = {
       vaultPath: document.getElementById('vaultPath').value,
       defaultLocation: document.getElementById('defaultLocation').value,
       defaultSignificance: parseInt(document.getElementById('defaultSignificance').value),
+      templatePattern: document.getElementById('templatePattern').value || defaultSettings.templatePattern,
       localRestApiUrl: document.getElementById('localRestApiUrl').value || defaultSettings.localRestApiUrl,
       localRestApiKey: document.getElementById('localRestApiKey').value || '',
       vaultFolders: vaultFolders,
       vaultTags: vaultTags,
+      vaultTemplates: currentSettings.vaultTemplates || [],
       genreMapping: genreMapping
     };
     
     await chrome.storage.sync.set(settings);
-    
-    console.log('Settings saved:', settings); // Debug log
     
     // Show save confirmation
     const status = document.getElementById('saveStatus');
@@ -189,11 +203,31 @@ async function syncVaultData() {
       document.getElementById('vaultTags').value = tags.join('\n');
     }
     
+    // Fetch templates with progress updates
+    const templatePattern = document.getElementById('templatePattern').value || defaultSettings.templatePattern;
+    const templates = await VaultIntegration.fetchVaultTemplates(templatePattern, (progress) => {
+      syncStatus.textContent = progress;
+    });
+    
+    // Store templates in settings (save immediately so they're available)
+    const currentSettings = await chrome.storage.sync.get(defaultSettings);
+    currentSettings.vaultTemplates = templates || [];
+    await chrome.storage.sync.set({ vaultTemplates: templates || [] });
+    
+    // Update templates display
+    const templatesList = document.getElementById('templatesList');
+    if (templates && templates.length > 0) {
+      templatesList.innerHTML = templates.map(t => `<div class="template-item">📄 ${t.name}</div>`).join('');
+    } else {
+      templatesList.innerHTML = '<em>No templates found matching pattern.</em>';
+    }
+    
     // Show success
     syncStatus.className = 'sync-status success';
     syncStatus.innerHTML = `✅ <strong>Sync successful!</strong><br>
       📂 ${folders ? folders.length : 0} folders found<br>
       🏷️ ${tags ? tags.length : 0} tags synced<br>
+      📄 ${templates ? templates.length : 0} templates found<br>
       <em>Don't forget to click "Save Settings" to keep these changes!</em>`;
     
   } catch (error) {

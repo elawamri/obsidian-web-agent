@@ -17,8 +17,20 @@ let highlightedIndex = -1;
 
 async function init() {
   try {
-    // Load settings
-    settings = await ObsidianAgent.loadSettings();
+    // Load settings - force fresh load from storage
+    settings = await chrome.storage.sync.get({
+      vaultPath: '',
+      defaultLocation: 'Books',
+      defaultSignificance: 3,
+      vaultFolders: [],
+      vaultTags: [],
+      vaultTemplates: [],
+      templatePattern: '.*Note Template\\.md$',
+      localRestApiUrl: 'http://127.0.0.1:27123',
+      localRestApiKey: '',
+      genreMapping: {},
+      tagMappingHistory: {}
+    });
     
     // Get current tab
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -215,6 +227,10 @@ function renderForm(flow, data) {
       case 'location':
         renderLocationField(formGroup, field, data, flow);
         break;
+        
+      case 'template':
+        renderTemplateField(formGroup, field, data, flow);
+        break;
     }
     
     // Help text
@@ -301,11 +317,6 @@ function initializeTagAutocomplete(suggestedTags, vaultTags) {
   suggestedTagsList = suggestedTags;
   selectedTagsSet = new Set(suggestedTags); // Auto-select suggested tags
   highlightedIndex = -1;
-  
-  console.log('=== Tag Autocomplete Initialization ===');
-  console.log('Vault tags:', vaultTags);
-  console.log('Suggested tags:', suggestedTags);
-  console.log('All available tags:', allAvailableTags);
   
   const input = document.getElementById('tagInput');
   const autocomplete = document.getElementById('tagAutocomplete');
@@ -510,8 +521,6 @@ function renderLocationField(container, field, data, flow) {
   helpText.textContent = 'Example: Books/Fiction or Notes/Projects';
   container.appendChild(helpText);
   
-  console.log('Vault folders:', settings.vaultFolders);
-  
   // Initialize autocomplete after DOM is ready
   setTimeout(() => {
     initializeLocationAutocomplete(suggestedLocation, settings.vaultFolders || []);
@@ -523,17 +532,12 @@ function initializeLocationAutocomplete(suggestedLocation, vaultFolders) {
   const autocomplete = document.getElementById('locationAutocomplete');
   let locationHighlightedIndex = -1;
   
-  console.log('=== Location Autocomplete Initialization ===');
-  console.log('Vault folders:', vaultFolders);
-  console.log('Suggested location:', suggestedLocation);
-  
   if (!input || !autocomplete) {
     console.error('Location input or autocomplete element not found');
     return;
   }
   
   const allFolders = [...new Set([suggestedLocation, ...vaultFolders])].filter(Boolean);
-  console.log('All folders:', allFolders);
   
   // Remove any existing listeners by cloning the input
   const newInput = input.cloneNode(true);
@@ -647,6 +651,164 @@ function updateLocationHighlight(items, highlightIndex) {
 }
 
 // ============================================
+// TEMPLATE SELECTOR
+// ============================================
+
+function renderTemplateField(container, field, data, flow) {
+  // Get available templates from settings
+  const templates = settings.vaultTemplates || [];
+  
+  // Find the default template for this flow
+  let defaultTemplate = null;
+  if (flow.defaultTemplate) {
+    defaultTemplate = templates.find(t => t.name === flow.defaultTemplate);
+  }
+  
+  // Create container for custom dropdown
+  const templateContainer = document.createElement('div');
+  templateContainer.className = 'tag-input-container';
+  
+  // Create the input field (shows selected template)
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.id = 'templateDisplay';
+  input.placeholder = templates.length > 0 ? 'Click to select template...' : 'No templates synced';
+  input.autocomplete = 'off';
+  input.readOnly = true;
+  input.style.cursor = 'pointer';
+  
+  // Set default value if available
+  if (defaultTemplate) {
+    input.value = defaultTemplate.name;
+    input.dataset.templatePath = defaultTemplate.path;
+  }
+  
+  templateContainer.appendChild(input);
+  
+  // Create hidden input to store the actual template path
+  const hiddenInput = document.createElement('input');
+  hiddenInput.type = 'hidden';
+  hiddenInput.id = 'template';
+  hiddenInput.name = 'template';
+  hiddenInput.value = defaultTemplate ? defaultTemplate.path : '';
+  container.appendChild(hiddenInput);
+  
+  // Create dropdown list
+  const dropdown = document.createElement('div');
+  dropdown.id = 'templateDropdown';
+  dropdown.className = 'tag-autocomplete hidden';
+  templateContainer.appendChild(dropdown);
+  
+  container.appendChild(templateContainer);
+  
+  // Help text
+  const helpText = document.createElement('p');
+  helpText.className = 'help-text';
+  if (templates.length === 0) {
+    helpText.innerHTML = 'No templates found. Go to <a href="options.html" target="_blank">Settings</a> and click "Sync from Obsidian".';
+  } else {
+    helpText.textContent = `Using template variables: {{title}}, {{author}}, {{tagsYaml}}, {{authorLink}}, etc.`;
+  }
+  container.appendChild(helpText);
+  
+  // Initialize dropdown after DOM is ready
+  setTimeout(() => {
+    initializeTemplateDropdown(templates, defaultTemplate);
+  }, 0);
+}
+
+function initializeTemplateDropdown(templates, defaultTemplate) {
+  const input = document.getElementById('templateDisplay');
+  const hiddenInput = document.getElementById('template');
+  const dropdown = document.getElementById('templateDropdown');
+  
+  if (!input || !dropdown || !hiddenInput) {
+    console.error('Template dropdown elements not found');
+    return;
+  }
+  
+  let highlightedIndex = -1;
+  
+  // Show dropdown on click
+  input.addEventListener('click', () => {
+    if (templates.length === 0) return;
+    
+    // Clear and populate dropdown
+    dropdown.innerHTML = '';
+    highlightedIndex = -1;
+    
+    templates.forEach((template, index) => {
+      const item = document.createElement('div');
+      item.className = 'tag-autocomplete-item';
+      item.textContent = template.name;
+      item.dataset.index = index;
+      
+      // Highlight if it's the selected template
+      if (input.value === template.name) {
+        item.classList.add('suggested');
+      }
+      
+      item.addEventListener('click', () => {
+        input.value = template.name;
+        hiddenInput.value = template.path;
+        dropdown.classList.add('hidden');
+        highlightedIndex = -1;
+      });
+      
+      dropdown.appendChild(item);
+    });
+    
+    dropdown.classList.remove('hidden');
+  });
+  
+  // Keyboard navigation
+  input.addEventListener('keydown', (e) => {
+    const items = dropdown.querySelectorAll('.tag-autocomplete-item');
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
+      updateTemplateHighlight(items, highlightedIndex);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      highlightedIndex = Math.max(highlightedIndex - 1, -1);
+      updateTemplateHighlight(items, highlightedIndex);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (highlightedIndex >= 0 && items[highlightedIndex]) {
+        const templateIndex = parseInt(items[highlightedIndex].dataset.index);
+        const template = templates[templateIndex];
+        input.value = template.name;
+        hiddenInput.value = template.path;
+        dropdown.classList.add('hidden');
+        highlightedIndex = -1;
+      }
+    } else if (e.key === 'Escape') {
+      dropdown.classList.add('hidden');
+      highlightedIndex = -1;
+    }
+  });
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.add('hidden');
+    }
+  });
+}
+
+function updateTemplateHighlight(items, highlightIndex) {
+  items.forEach((item, index) => {
+    if (index === highlightIndex) {
+      item.classList.add('highlighted');
+      item.scrollIntoView({ block: 'nearest' });
+    } else {
+      item.classList.remove('highlighted');
+    }
+  });
+}
+
+// ============================================
 // FORM SUBMISSION
 // ============================================
 
@@ -675,13 +837,37 @@ async function handleFormSubmit(e) {
     // Update currentData with form values
     Object.assign(currentData, formData);
     
-    // Generate note content
-    const content = await currentFlow.generateNoteContent(currentData, formData);
+    // Generate note content using template system
+    let content;
+    
+    // Check if template is selected
+    if (formData.template) {
+      // Fetch template content
+      VaultIntegration.apiUrl = settings.localRestApiUrl;
+      VaultIntegration.apiKey = settings.localRestApiKey;
+      
+      try {
+        const templateContent = await VaultIntegration.fetchTemplateContent(formData.template);
+        content = ObsidianAgent.applyTemplate(templateContent, currentData, formData);
+      } catch (error) {
+        throw new Error(`Failed to fetch template: ${error.message}. Make sure Local REST API is configured in settings.`);
+      }
+    } else {
+      // Fallback: use flow's generateNoteContent if available (backward compatibility)
+      if (typeof currentFlow.generateNoteContent === 'function') {
+        content = await currentFlow.generateNoteContent(currentData, formData);
+      } else {
+        throw new Error('No template selected and no default content generator available.');
+      }
+    }
     
     // Create file name
     const title = formData.title || currentData.title || 'Untitled';
     const fileName = ObsidianAgent.sanitizeFileName(title) + '.md';
     const location = formData.location || currentFlow.defaultLocation || settings.defaultLocation;
+    
+    // Update ObsidianAgent settings before creating note
+    ObsidianAgent.settings = settings;
     
     // Create note in Obsidian
     const result = await ObsidianAgent.createObsidianNote(fileName, location, content);

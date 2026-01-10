@@ -153,6 +153,104 @@ const VaultIntegration = {
       console.error('Failed to fetch vault tags:', error);
       return null;
     }
+  },
+  
+  // Fetch all note templates from the vault
+  async fetchVaultTemplates(templatePattern, onProgress) {
+    try {
+      if (onProgress) {
+        onProgress('Searching for note templates...');
+      }
+      
+      // Default pattern: files ending with "Note Template.md"
+      const pattern = templatePattern || '.*Note Template\\.md$';
+      const regex = new RegExp(pattern, 'i');
+      
+      const allTemplates = [];
+      const foldersToVisit = ['']; // Start from root
+      let visited = 0;
+      
+      while (foldersToVisit.length > 0) {
+        const currentPath = foldersToVisit.pop();
+        visited++;
+        
+        if (onProgress) {
+          onProgress(`Scanning for templates... (${visited} folders checked, ${allTemplates.length} found)`);
+        }
+        
+        const url = currentPath 
+          ? `${this.apiUrl}/vault/${encodeURIComponent(currentPath)}/`
+          : `${this.apiUrl}/vault/`;
+        
+        try {
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: this.getHeaders()
+          });
+          
+          if (!response.ok) {
+            continue;
+          }
+          
+          const data = await response.json();
+          
+          if (data.files) {
+            data.files.forEach(item => {
+              if (item.endsWith('/')) {
+                // Directory - add to queue
+                const folderName = item.slice(0, -1);
+                const fullPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+                
+                if (!folderName.startsWith('.') && folderName !== 'node_modules') {
+                  foldersToVisit.push(fullPath);
+                }
+              } else if (item.endsWith('.md')) {
+                // Markdown file - check if it matches template pattern
+                const fullPath = currentPath ? `${currentPath}/${item}` : item;
+                
+                if (regex.test(item)) {
+                  // Extract template name (remove path and .md extension)
+                  const templateName = item.replace(/\.md$/, '');
+                  allTemplates.push({
+                    name: templateName,
+                    path: fullPath
+                  });
+                }
+              }
+            });
+          }
+        } catch (err) {
+          console.log(`Failed to read folder: ${currentPath}`, err);
+        }
+      }
+      
+      return allTemplates.sort((a, b) => a.name.localeCompare(b.name));
+    } catch (error) {
+      console.error('Failed to fetch vault templates:', error);
+      return null;
+    }
+  },
+  
+  // Fetch template file content
+  async fetchTemplateContent(templatePath) {
+    try {
+      const url = `${this.apiUrl}/vault/${encodeURIComponent(templatePath)}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.getHeaders()
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch template: ${response.status}`);
+      }
+      
+      const content = await response.text();
+      return content;
+    } catch (error) {
+      console.error('Failed to fetch template content:', error);
+      throw error;
+    }
   }
 };
 

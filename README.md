@@ -124,33 +124,40 @@ The original plugin doesn't provide a `/tags/` endpoint. This fork adds tag retr
 - **Auto-Location**: Suggests folder based on content type
 - **Wiki-Links**: Authors become `[[Author Name]]` links
 
-## 📝 Note Template (Books)
+## 📝 Note Templates
+
+Templates are markdown files in your vault. Name them ending with `"Note Template"` (e.g., `Book Note Template.md`).
+
+### Creating a Template
+
+Use HTML comments `<!-- variable -->` as placeholders - they're invisible in reading view:
 
 ```markdown
 ---
-Source: "[Here](url)"
-Clickable Source: url
+Source: "[Here]()"
+Clickable Source: 
 tags:
   - Media-Type/Book
-  - Tag1
-  - Tag2
-Significance: 3
+Significance:
 ---
 # Book Info:
-#### Title: Book Title
-#### Author: [[Author Name]]
+#### Title: <!-- title -->
+#### Author: <!-- authorLink -->
 
 ### Image:
-<img src="cover-url" alt="title" width="300"/>
+<img src="<!-- imageUrl -->" alt="Book Cover" width="300"/>
 
 #### Summary:
-Description...
-
-# Keywords:
-# Related Notes:
-# Additional Resources
-# References:
+<!-- description -->
 ```
+
+**Available variables:** `title`, `author`, `authorLink`, `description`, `imageUrl`, `sourceUrl`, `significance`, `tags`, `tagsYaml`
+
+### Syncing Templates
+
+1. Create template files in your vault (name them `*Note Template.md`)
+2. Go to Settings → "Sync from Obsidian" → "Save Settings"
+3. Select templates when creating notes
 
 ## ⚙️ Configuration
 

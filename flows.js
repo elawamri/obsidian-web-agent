@@ -53,6 +53,9 @@ FlowRegistry.register({
   // Default media type tag for this flow
   mediaTypeTag: 'Media-Type/Book',
   
+  // Default template for this flow
+  defaultTemplate: 'Book Note Template',
+  
   // Genre to tag mapping specific to this flow
   genreMapping: {
     'Fiction': 'Literature',
@@ -101,41 +104,8 @@ FlowRegistry.register({
     return Array.from(suggestedTags);
   },
 
-  // Generate note content for a book
-  async generateNoteContent(data, formData) {
-    const tagLines = formData.tags.split(',').map(t => `  - ${t.trim()}`).join('\n');
-    const authorLink = ObsidianAgent.formatWikiLink(data.author);
-    
-    return `---
-Source: "[Here](${formData.sourceUrl})"
-Clickable Source: ${formData.sourceUrl}
-tags:
-${tagLines}
-Significance: ${formData.significance}
----
-# Book Info:
-#### Title: ${data.title}
-#### Author: ${authorLink}
-
-### Image:
-
-<img src="${data.imageUrl}" alt="${data.title}" width="300"/>
-
-#### Summary:
-${data.description}
-
-# Keywords:
-
-# Related Notes:
-
-# Additional Resources
-
-# References:
-
-######  - Exact Reference:  
-###### - Note Reference:
-`;
-  },
+  // Note: generateNoteContent has been removed in favor of template-based system
+  // Templates are fetched from vault and use variable substitution
 
   // Form fields configuration for this flow
   formFields: [
@@ -146,6 +116,7 @@ ${data.description}
     { id: 'tags', label: 'Tags', type: 'tags' },
     { id: 'significance', label: 'Significance (1-5)', type: 'number', min: 1, max: 5, default: 3 },
     { id: 'location', label: 'Note Location', type: 'location' },
+    { id: 'template', label: 'Note Template', type: 'template' },
     { id: 'sourceUrl', label: 'Goodreads URL', type: 'url', readonly: true }
   ],
 
@@ -179,6 +150,7 @@ FlowRegistry.register({
     /.*/  // Matches any URL
   ],
   mediaTypeTag: 'Media-Type/Web-Page',
+  defaultTemplate: 'Web Page Note Template',
   
   generateTags(data, settings) {
     return [this.mediaTypeTag];
@@ -190,33 +162,11 @@ FlowRegistry.register({
     { id: 'description', label: 'Notes', type: 'textarea', rows: 6 },
     { id: 'tags', label: 'Tags', type: 'tags' },
     { id: 'significance', label: 'Significance (1-5)', type: 'number', min: 1, max: 5, default: 3 },
-    { id: 'location', label: 'Note Location', type: 'location' }
+    { id: 'location', label: 'Note Location', type: 'location' },
+    { id: 'template', label: 'Note Template', type: 'template' }
   ],
 
-  async generateNoteContent(data, formData) {
-    const tagLines = formData.tags.split(',').map(t => `  - ${t.trim()}`).join('\n');
-    
-    return `---
-Source: "[Here](${formData.sourceUrl})"
-Clickable Source: ${formData.sourceUrl}
-tags:
-${tagLines}
-Significance: ${formData.significance}
----
-# ${data.title}
-
-#### Summary:
-${formData.description || ''}
-
-# Keywords:
-
-# Related Notes:
-
-# Additional Resources
-
-# References:
-`;
-  },
+  // Note: generateNoteContent removed - uses template system
 
   mapDataToForm(data) {
     return {

@@ -12,6 +12,10 @@ const ObsidianAgent = {
       defaultSignificance: 3,
       vaultFolders: [],
       vaultTags: [],
+      vaultTemplates: [],
+      templatePattern: '.*Note Template\\.md$',
+      localRestApiUrl: 'http://127.0.0.1:27123',
+      localRestApiKey: '',
       genreMapping: {},
       tagMappingHistory: {}
     });
@@ -87,9 +91,73 @@ const ObsidianAgent = {
   formatWikiLink(name) {
     return `[[${name}]]`;
   },
+  
+  // Apply template with variable substitution
+  applyTemplate(templateContent, data, formData) {
+    let content = templateContent;
+    
+    // Build complete data object merging data and formData
+    const allData = { ...data, ...formData };
+    
+    // Special handling for tags (convert to YAML list format)
+    if (allData.tags) {
+      const tagLines = allData.tags.split(',').map(t => `  - ${t.trim()}`).join('\n');
+      allData.tagsYaml = tagLines;
+    }
+    
+    // Special handling for author wiki-link
+    if (allData.author) {
+      allData.authorLink = this.formatWikiLink(allData.author);
+    }
+    
+    // Handle YAML frontmatter separately
+    const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
+    const frontmatterMatch = content.match(frontmatterRegex);
+    
+    if (frontmatterMatch) {
+      let frontmatter = frontmatterMatch[1];
+      
+      // Replace Source and Clickable Source
+      if (allData.sourceUrl) {
+        frontmatter = frontmatter.replace(/Source:\s*"?\[Here\]\(\)"?/, `Source: "[Here](${allData.sourceUrl})"`);
+        frontmatter = frontmatter.replace(/Clickable Source:\s*\n/, `Clickable Source: ${allData.sourceUrl}\n`);
+      }
+      
+      // Replace tags
+      if (allData.tagsYaml) {
+        frontmatter = frontmatter.replace(/tags:\s*\n\s*-\s*Media-Type\/Book/, `tags:\n${allData.tagsYaml}`);
+      }
+      
+      // Replace Significance
+      if (allData.significance) {
+        frontmatter = frontmatter.replace(/Significance:\s*$/, `Significance: ${allData.significance}`, 'm');
+      }
+      
+      content = content.replace(frontmatterMatch[0], `---\n${frontmatter}\n---`);
+    }
+    
+    // Replace all {{variable}} placeholders in body
+    content = content.replace(/\{\{\s*([\w\.]+)\s*\}\}/g, (match, varName) => {
+      const value = varName.split('.').reduce((obj, key) => obj?.[key], allData);
+      return value !== undefined && value !== null ? value : match;
+    });
+    
+    // Replace HTML comment style in body: <!-- variable -->
+    content = content.replace(/<!--\s*([\w\.]+)\s*-->/g, (match, varName) => {
+      const value = varName.split('.').reduce((obj, key) => obj?.[key], allData);
+      return value !== undefined && value !== null ? value : match;
+    });
+    
+    return content;
+  },
 
   // Create note in Obsidian using URI protocol
   async createObsidianNote(fileName, location, content) {
+    // Check if vault name is configured
+    if (!this.settings.vaultPath || this.settings.vaultPath.trim() === '') {
+      throw new Error('Vault name not configured! Please go to Settings and enter your vault name.');
+    }
+    
     const fullPath = `${location}/${fileName}`;
     
     // Method 1: Try advanced URI with content (if content is not too long)

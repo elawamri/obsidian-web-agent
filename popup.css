@@ -168,7 +168,8 @@ label {
 input[type="text"],
 input[type="url"],
 input[type="number"],
-textarea {
+textarea,
+select.template-select {
   width: 100%;
   padding: 8px 12px;
   border: 1px solid #ddd;
@@ -176,6 +177,11 @@ textarea {
   font-size: 14px;
   font-family: inherit;
   transition: border-color 0.2s;
+}
+
+select.template-select {
+  background: white;
+  cursor: pointer;
 }
 
 input:focus,
