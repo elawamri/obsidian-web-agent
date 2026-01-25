@@ -688,10 +688,8 @@ function renderTemplateField(container, field, data, flow) {
   const input = document.createElement('input');
   input.type = 'text';
   input.id = 'templateDisplay';
-  input.placeholder = templates.length > 0 ? 'Click to select template...' : 'No templates synced';
+  input.placeholder = templates.length > 0 ? 'Type to search templates...' : 'No templates synced';
   input.autocomplete = 'off';
-  input.readOnly = true;
-  input.style.cursor = 'pointer';
   
   // Set default value if available
   if (defaultTemplate) {
@@ -723,7 +721,7 @@ function renderTemplateField(container, field, data, flow) {
   if (templates.length === 0) {
     helpText.innerHTML = 'No templates found. Go to <a href="options.html" target="_blank">Settings</a> and click "Sync from Obsidian".';
   } else {
-    helpText.textContent = `Using template variables: {{title}}, {{author}}, {{tagsYaml}}, {{authorLink}}, etc.`;
+    helpText.textContent = `Type to filter templates. Using variables: {{title}}, {{author}}, {{tagsYaml}}, {{authorLink}}, etc.`;
   }
   container.appendChild(helpText);
   
@@ -744,37 +742,62 @@ function initializeTemplateDropdown(templates, defaultTemplate) {
   }
   
   let highlightedIndex = -1;
+  let filteredTemplates = templates;
   
-  // Show dropdown on click
-  input.addEventListener('click', () => {
+  // Function to show/update dropdown with filtered templates
+  const showDropdown = (filter = '') => {
     if (templates.length === 0) return;
+    
+    // Filter templates based on input
+    const filterLower = filter.toLowerCase();
+    filteredTemplates = templates.filter(template => 
+      template.name.toLowerCase().includes(filterLower)
+    );
     
     // Clear and populate dropdown
     dropdown.innerHTML = '';
     highlightedIndex = -1;
     
-    templates.forEach((template, index) => {
-      const item = document.createElement('div');
-      item.className = 'tag-autocomplete-item';
-      item.textContent = template.name;
-      item.dataset.index = index;
-      
-      // Highlight if it's the selected template
-      if (input.value === template.name) {
-        item.classList.add('suggested');
-      }
-      
-      item.addEventListener('click', () => {
-        input.value = template.name;
-        hiddenInput.value = template.path;
-        dropdown.classList.add('hidden');
-        highlightedIndex = -1;
+    if (filteredTemplates.length === 0) {
+      const noResults = document.createElement('div');
+      noResults.className = 'tag-autocomplete-item';
+      noResults.textContent = 'No templates match your search';
+      noResults.style.color = '#999';
+      dropdown.appendChild(noResults);
+    } else {
+      filteredTemplates.forEach((template, index) => {
+        const item = document.createElement('div');
+        item.className = 'tag-autocomplete-item';
+        item.textContent = template.name;
+        item.dataset.index = index;
+        
+        // Highlight if it's the selected template
+        if (input.value === template.name) {
+          item.classList.add('suggested');
+        }
+        
+        item.addEventListener('click', () => {
+          input.value = template.name;
+          hiddenInput.value = template.path;
+          dropdown.classList.add('hidden');
+          highlightedIndex = -1;
+        });
+        
+        dropdown.appendChild(item);
       });
-      
-      dropdown.appendChild(item);
-    });
+    }
     
     dropdown.classList.remove('hidden');
+  };
+  
+  // Show dropdown on focus
+  input.addEventListener('focus', () => {
+    showDropdown(input.value);
+  });
+  
+  // Filter as user types
+  input.addEventListener('input', (e) => {
+    showDropdown(e.target.value);
   });
   
   // Keyboard navigation
@@ -793,7 +816,7 @@ function initializeTemplateDropdown(templates, defaultTemplate) {
       e.preventDefault();
       if (highlightedIndex >= 0 && items[highlightedIndex]) {
         const templateIndex = parseInt(items[highlightedIndex].dataset.index);
-        const template = templates[templateIndex];
+        const template = filteredTemplates[templateIndex];
         input.value = template.name;
         hiddenInput.value = template.path;
         dropdown.classList.add('hidden');
