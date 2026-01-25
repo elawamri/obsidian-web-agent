@@ -299,11 +299,21 @@ function renderTagField(container, field, data, flow) {
   const genres = data.genres || currentData?.genres || [];
   
   if (flow.generateTags) {
-    // For YouTube flow, pass the data to check if it's a playlist
-    suggestedTags = flow.generateTags(currentData || data, settings);
-  } else if (genres.length > 0 && flow.generateTags) {
-    suggestedTags = flow.generateTags(genres, settings);
-  } else if (flow.mediaTypeTag) {
+    // Different flows expect different parameters
+    if (flow.id === 'youtube') {
+      // YouTube flow expects the full data object to check isPlaylist
+      suggestedTags = flow.generateTags(currentData || data, settings);
+    } else if (flow.id === 'goodreads' && genres.length > 0) {
+      // Goodreads flow expects genres array
+      suggestedTags = flow.generateTags(genres, settings);
+    } else if (genres.length > 0) {
+      // Other flows that might use genres
+      suggestedTags = flow.generateTags(genres, settings);
+    }
+  }
+  
+  // Fallback to mediaTypeTag if no tags generated
+  if (suggestedTags.length === 0 && flow.mediaTypeTag) {
     suggestedTags = [flow.mediaTypeTag];
   }
   
