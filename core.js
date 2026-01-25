@@ -110,6 +110,19 @@ const ObsidianAgent = {
       allData.authorLink = this.formatWikiLink(allData.author);
     }
     
+    // Special handling for channel wiki-link (YouTube)
+    if (allData.channel) {
+      allData.channelLink = this.formatWikiLink(allData.channel);
+    }
+    
+    // Special handling for image/thumbnail embeds
+    if (allData.imageUrl) {
+      allData.imageEmbed = `![](${allData.imageUrl})`;
+    }
+    if (allData.thumbnailUrl) {
+      allData.thumbnailEmbed = `![](${allData.thumbnailUrl})`;
+    }
+    
     // Handle YAML frontmatter separately
     const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
     const frontmatterMatch = content.match(frontmatterRegex);
@@ -119,13 +132,27 @@ const ObsidianAgent = {
       
       // Replace Source and Clickable Source
       if (allData.sourceUrl) {
-        frontmatter = frontmatter.replace(/Source:\s*"?\[Here\]\(\)"?/, `Source: "[Here](${allData.sourceUrl})"`);
-        frontmatter = frontmatter.replace(/Clickable Source:\s*\n/, `Clickable Source: ${allData.sourceUrl}\n`);
+        frontmatter = frontmatter.replace(/Source:\s*"?\[Here\]\(#?\)"?/, `Source: "[Here](${allData.sourceUrl})"`);
+        frontmatter = frontmatter.replace(/Clickable Source:.*$/m, `Clickable Source: ${allData.sourceUrl}`);
       }
       
-      // Replace tags
+      // Replace tags - preserve template's base tags and add user-selected tags
       if (allData.tagsYaml) {
-        frontmatter = frontmatter.replace(/tags:\s*\n\s*-\s*Media-Type\/Book/, `tags:\n${allData.tagsYaml}`);
+        // Match tags section with existing tags
+        const tagsRegex = /tags:\s*\n(\s*-\s*.+\n?)*/;
+        const tagsMatch = frontmatter.match(tagsRegex);
+        
+        if (tagsMatch) {
+          // Extract existing template tags
+          const existingTags = tagsMatch[0].match(/\s*-\s*(.+)/g)?.map(t => t.trim().substring(2)) || [];
+          
+          // Merge template tags with user tags
+          const userTags = allData.tags.split(',').map(t => t.trim());
+          const allTags = [...new Set([...existingTags, ...userTags])];
+          const mergedTagsYaml = allTags.map(t => `  - ${t}`).join('\n');
+          
+          frontmatter = frontmatter.replace(tagsRegex, `tags:\n${mergedTagsYaml}\n`);
+        }
       }
       
       // Replace Significance
@@ -147,6 +174,60 @@ const ObsidianAgent = {
       const value = varName.split('.').reduce((obj, key) => obj?.[key], allData);
       return value !== undefined && value !== null ? value : match;
     });
+    
+    // Special handling for YouTube content - inject thumbnail, channel, and description if not already present
+    if (allData.flowType === 'youtube') {
+      // Check if template doesn't already have placeholders
+      const hasThumbPlaceholder = /<!--\s*thumbnail|{{thumbnail|!\[\]\(.*thumbnailUrl/i.test(templateContent);
+      const hasChannelPlaceholder = /<!--\s*channel|{{channel/i.test(templateContent);
+      const hasDescPlaceholder = /<!--\s*description|{{description/i.test(templateContent);
+      
+      // Add thumbnail after frontmatter if not present in template
+      if (!hasThumbPlaceholder && allData.thumbnailUrl) {
+        const afterFrontmatter = content.match(/^---\n[\s\S]*?\n---\n/);
+        if (afterFrontmatter) {
+          const thumbnailSection = `#### Thumbnail:\n![](${allData.thumbnailUrl})\n\n`;
+          content = content.replace(/^(---\n[\s\S]*?\n---\n)/, `$1${thumbnailSection}`);
+        }
+      }
+      
+      // Add channel as its own section if not present in template
+      if (!hasChannelPlaceholder && allData.channel) {
+        const channelLink = allData.channelUrl 
+          ? `[${allData.channel}](${allData.channelUrl})` 
+          : allData.channel;
+        
+        // Add before Keywords section if it exists
+        if (/####\s*Keywords:/i.test(content)) {
+          content = content.replace(/(####\s*Keywords:)/i, `#### Channel:\n${channelLink}\n\n$1`);
+        } else {
+          // Add after thumbnail or after frontmatter
+          const afterFrontmatter = content.match(/^---\n[\s\S]*?\n---\n/);
+          if (afterFrontmatter) {
+            // Find where to insert (after thumbnail if it exists)
+            if (/####\s*Thumbnail:/i.test(content)) {
+              content = content.replace(/(####\s*Thumbnail:\n!\[\].*?\n\n)/i, `$1#### Channel:\n${channelLink}\n\n`);
+            } else {
+              content = content.replace(/^(---\n[\s\S]*?\n---\n)/, `$1#### Channel:\n${channelLink}\n\n`);
+            }
+          }
+        }
+      }
+      
+      // Add description if not present in template
+      if (!hasDescPlaceholder && allData.description && allData.description.trim()) {
+        // Add after Channel section if it exists
+        if (/####\s*Channel:/i.test(content)) {
+          content = content.replace(/(####\s*Channel:\n.*?\n\n)/i, `$1#### Description:\n${allData.description}\n\n`);
+        } else if (/####\s*Thumbnail:/i.test(content)) {
+          // Add after Thumbnail if Channel doesn't exist
+          content = content.replace(/(####\s*Thumbnail:\n!\[\].*?\n\n)/i, `$1#### Description:\n${allData.description}\n\n`);
+        } else {
+          // Add after frontmatter
+          content = content.replace(/^(---\n[\s\S]*?\n---\n)/, `$1#### Description:\n${allData.description}\n\n`);
+        }
+      }
+    }
     
     return content;
   },

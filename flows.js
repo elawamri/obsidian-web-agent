@@ -137,7 +137,80 @@ FlowRegistry.register({
 });
 
 // ============================================
-// Placeholder flows for future implementation
+// FLOW: YouTube Video/Playlist Import
+// ============================================
+FlowRegistry.register({
+  id: 'youtube',
+  name: 'YouTube Video/Playlist',
+  description: 'Import video or playlist information from YouTube',
+  icon: '🎥',
+  urlPatterns: [
+    /youtube\.com\/watch/,
+    /youtube\.com\/playlist/,
+    /youtu\.be\//,
+    /youtube\.com\/shorts\//
+  ],
+  
+  // No default template - user can choose subject-specific templates (Biology, Physics, etc.)
+  defaultTemplate: null,
+  
+  // Generate tags based on content type
+  generateTags(data, settings) {
+    const suggestedTags = new Set();
+    const vaultTags = settings.vaultTags || [];
+    
+    // Add Resource tag for playlists if it exists in vault
+    if (data.isPlaylist) {
+      // Try to find Resource tag with flexible matching
+      const resourceTag = vaultTags.find(tag => {
+        const cleanTag = tag.toLowerCase().replace(/^#/, '');
+        return cleanTag === 'resource' || cleanTag === 'resources';
+      });
+      
+      if (resourceTag) {
+        // Remove leading # if present
+        const cleanTag = resourceTag.startsWith('#') ? resourceTag.substring(1) : resourceTag;
+        suggestedTags.add(cleanTag);
+      } else {
+        // If no Resource tag in vault, add it anyway
+        suggestedTags.add('Resource');
+      }
+    }
+    
+    return Array.from(suggestedTags);
+  },
+
+  // Form fields configuration for this flow
+  formFields: [
+    { id: 'title', label: 'Title', type: 'text', required: true },
+    { id: 'channel', label: 'Channel', type: 'text', required: false },
+    { id: 'thumbnailUrl', label: 'Thumbnail URL', type: 'url', required: false, showPreview: true },
+    { id: 'description', label: 'Description', type: 'textarea', rows: 4 },
+    { id: 'tags', label: 'Tags', type: 'tags' },
+    { id: 'significance', label: 'Significance (1-5)', type: 'number', min: 1, max: 5, default: 3 },
+    { id: 'location', label: 'Note Location', type: 'location' },
+    { id: 'template', label: 'Note Template', type: 'template' }
+  ],
+
+  // Map extracted data to form fields
+  mapDataToForm(data) {
+    return {
+      title: data.title,
+      channel: data.channel,
+      thumbnailUrl: data.thumbnailUrl,
+      description: data.description,
+      sourceUrl: data.pageUrl,
+      contentType: data.isPlaylist ? 'Playlist' : 'Video',
+      isPlaylist: data.isPlaylist  // Preserve this for tag generation
+    };
+  },
+
+  // Default location for YouTube content
+  defaultLocation: 'Resources'
+});
+
+// ============================================
+// FLOW: Generic Web Page
 // ============================================
 
 // Generic Web Page flow (always available as fallback)

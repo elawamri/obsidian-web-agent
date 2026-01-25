@@ -104,6 +104,9 @@ async function activateFlow(flow, tab) {
     if (flow.id === 'goodreads') {
       // Use the Goodreads content script
       data = await chrome.tabs.sendMessage(tab.id, { action: 'extractBookData' });
+    } else if (flow.id === 'youtube') {
+      // Use the YouTube content script
+      data = await chrome.tabs.sendMessage(tab.id, { action: 'extractYouTubeData' });
     } else {
       // Generic extraction - get basic page info
       data = await chrome.scripting.executeScript({
@@ -295,7 +298,10 @@ function renderTagField(container, field, data, flow) {
   let suggestedTags = [];
   const genres = data.genres || currentData?.genres || [];
   
-  if (flow.generateTags && genres.length > 0) {
+  if (flow.generateTags) {
+    // For YouTube flow, pass the data to check if it's a playlist
+    suggestedTags = flow.generateTags(currentData || data, settings);
+  } else if (genres.length > 0 && flow.generateTags) {
     suggestedTags = flow.generateTags(genres, settings);
   } else if (flow.mediaTypeTag) {
     suggestedTags = [flow.mediaTypeTag];
@@ -833,6 +839,11 @@ async function handleFormSubmit(e) {
         formData[field.id] = el.value;
       }
     });
+    
+    // Preserve sourceUrl (YouTube/page URL) even though it's not in the form
+    if (currentData.pageUrl && !formData.sourceUrl) {
+      formData.sourceUrl = currentData.pageUrl;
+    }
     
     // Update currentData with form values
     Object.assign(currentData, formData);

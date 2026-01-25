@@ -11,6 +11,8 @@
   ],
   "host_permissions": [
     "https://www.goodreads.com/*",
+    "https://www.youtube.com/*",
+    "https://youtu.be/*",
     "https://*/*",
     "http://*/*",
     "http://127.0.0.1:*/*",
@@ -33,6 +35,15 @@
     {
       "matches": ["https://www.goodreads.com/book/show/*"],
       "js": ["flows/goodreads/content.js"]
+    },
+    {
+      "matches": [
+        "https://www.youtube.com/watch*",
+        "https://www.youtube.com/playlist*",
+        "https://www.youtube.com/shorts/*",
+        "https://youtu.be/*"
+      ],
+      "js": ["flows/youtube/content.js"]
     }
   ],
   "options_page": "options.html"
