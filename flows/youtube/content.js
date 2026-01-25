@@ -1,7 +1,7 @@
 // Content script to extract video/playlist information from YouTube pages
 // Flow: YouTube Video/Playlist Import
 
-function extractYouTubeData() {
+async function extractYouTubeData() {
   try {
     const url = window.location.href;
     const isPlaylist = url.includes('list=');
@@ -108,11 +108,27 @@ function extractYouTubeData() {
       channel = channelElement?.textContent?.trim() || '';
       channelUrl = channelElement?.href || '';
 
-      // Extract video description
-      const descElement = document.querySelector('ytd-text-inline-expander span.yt-core-attributed-string') ||
+      // Extract video description - try to get full text
+      // First, try to expand the description if it's collapsed
+      const expandButton = document.querySelector('tp-yt-paper-button#expand') ||
+                          document.querySelector('#description-inline-expander tp-yt-paper-button');
+      if (expandButton && expandButton.textContent.includes('more')) {
+        expandButton.click();
+        // Wait a brief moment for the description to expand
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      // Now extract the full description
+      const descElement = document.querySelector('#description-inline-expander #description-inner') ||
+                         document.querySelector('ytd-text-inline-expander #description-inner') ||
+                         document.querySelector('ytd-text-inline-expander span.yt-core-attributed-string') ||
                          document.querySelector('#description yt-formatted-string') ||
                          document.querySelector('.ytd-video-secondary-info-renderer #description');
       description = descElement?.textContent?.trim() || '';
+      
+      // Remove hashtags from description to prevent Obsidian tag contamination
+      // Replace #hashtag with hashtag (remove the # symbol) - supports English, Arabic, and other languages
+      description = description.replace(/#([\w\u0600-\u06FF]+)/g, '$1');
 
       // Video thumbnail
       if (videoId) {
@@ -151,15 +167,17 @@ function extractYouTubeData() {
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'extractYouTubeData' || request.action === 'extractData') {
-    const youtubeData = extractYouTubeData();
-    sendResponse(youtubeData);
+    extractYouTubeData().then(youtubeData => {
+      sendResponse(youtubeData);
+    });
+    return true; // Required for async sendResponse
   }
   return true;
 });
 
 // Store YouTube data when page loads
-window.addEventListener('load', () => {
-  const youtubeData = extractYouTubeData();
+window.addEventListener('load', async () => {
+  const youtubeData = await extractYouTubeData();
   if (youtubeData.success) {
     chrome.storage.local.set({ currentYouTubeData: youtubeData });
   }
